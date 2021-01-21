@@ -1,7 +1,19 @@
 ;;; giraorg -- minimal gira ui
 
 (require 'jirafalib)
-(defvar jirafa-entry-format "[%s] %s")
+
+(defvar-local jirafa-entry-format "[%s] %s")
+(defvar-local jirafa-cache-project-collection nil)
+(defvar-local jirafa-cache-project-assignee-collection (make-hash-table))
+(defvar-local jirafa-cache-issuetype-collection (make-hash-table))
+
+
+(defun jirafa-refresh-cache ()
+  "Refresh cache."
+  (interactive)
+  (jirafa-cache-project-collection-load)
+  (jirafa-cache-issuetype-collection-load)
+  (jirafa-cache-project-assignee-collection-load))
 
 
 (defun jirafa-insert-from-issue--at-point (issue-id)
@@ -17,14 +29,13 @@
 (defun jirafa-insert-new-issue--at-point ()
   "Insert a new issue."
   (interactive)
-  (let* ((project-name (completing-read "PROJECT: " (jirafa-jirafalib-project-collection)))
-         (project-id (project-id-from-project-collection project-name))
-         (assignee-name (completing-read "ASSIGNEE: " (jirafa-jirafalib-assignee-collection project-id)))
+  (let* ((project-name (completing-read "PROJECT: " jirafa-cache-project-collection))
+         (project-id (jirafa-project-id-from-project-collection project-name))
+         (assignee-name (completing-read "ASSIGNEE: " (jirafa-assignee-collection project-id)))
 
-         (issue-type (completing-read "ISSUETYPE: " (jirafa-jirafalib-project-issuetypes-collection
-                                                     project-id)))
-         (issuetype-id (issuetype-id-from-issuetypes-collection project-id issue-type))
-         (assignee-id (assignee-id-from-collection project-id assignee-name))
+         (issue-type (completing-read "ISSUETYPE: " (jirafa-project-issuetypes-collection project-id)))
+         (issuetype-id (jirafa-issuetype-id-from-issuetypes-collection project-id issue-type))
+         (assignee-id (jirafa-assignee-id-from-collection project-id assignee-name))
          (summary (read-string "SUMMARY: " ""))
          (description (read-string "DESCRIPTION: " "")))
     ;; retorna
@@ -39,12 +50,6 @@
       (org-entry-put nil "JIRAFA-JIRA-KEY" key))
     ))
 
-(defun jirafa-jirafalib-project-collection ()
-  (seq-map (lambda (project)
-             (cons
-              (cdr (assoc 'name project))
-              (cdr (assoc 'id project))))
-           (jirafalib-project--list)))
 
 (defun jirafa-jirafalib-project-issuetypes-collection (id-or-key)
   (let* ((project (jirafalib-project-detail--get-by-id-or-key id-or-key))
@@ -56,6 +61,17 @@
              issuetypes)
     ))
 
+(defun jirafa-project-issuetypes-collection (project-id)
+  (gethash project-id jirafa-cache-issuetype-collection))
+
+(defun jirafa-issuetype-id-from-issuetypes-collection (project-id issue-name)
+  (let ((collection (jirafa-project-issuetypes-collection project-id)))
+    (cdr (assoc issue-name collection))
+  ))
+
+(defun jirafa-assignee-collection (project-id)
+  (gethash project-id jirafa-cache-project-assignee-collection))
+
 (defun jirafa-jirafalib-assignee-collection (project-id)
   (let* ((users (jirafalib-project-users-assignable--get-by-id-or-key project-id)))
     (seq-map (lambda (user)
@@ -64,20 +80,39 @@
                 (cdr (assoc 'accountId user))))
              users)))
 
-               
-(defun project-id-from-project-collection (project-name)
-  (let ((collection (jirafa-jirafalib-project-collection)))
-    (cdr (assoc project-name collection))
-    ))
-
-(defun issuetype-id-from-issuetypes-collection (project-id issue-name)
-  (let ((collection (jirafa-jirafalib-project-issuetypes-collection project-id)))
-    (cdr (assoc issue-name collection))
-  ))
-
-(defun assignee-id-from-collection (project-id assignee-name)
-  (let ((collection (jirafa-jirafalib-assignee-collection project-id)))
+(defun jirafa-assignee-id-from-collection (project-id assignee-name)
+  (let ((collection (jirafa-assignee-collection project-id)))
     (cdr (assoc assignee-name collection))))
+
+(defun jirafa-project-id-from-project-collection (project-name)
+  (cdr (assoc project-name jirafa-cache-project-collection)))
+
+(defun jirafa-jirafalib-project-collection ()
+  (seq-map (lambda (project)
+             (cons
+              (cdr (assoc 'name project))
+              (cdr (assoc 'id project))))
+           (jirafalib-project--list)))
+
+(defun jirafa-cache-project-collection-load ()
+  (let ((collection (jirafa-jirafalib-project-collection)))
+    (setq jirafa-cache-project-collection collection)))
+
+(defun jirafa-cache-issuetype-collection-load ()
+  (dolist (project jirafa-cache-project-collection)
+    (let* ((project-id (cdr project))
+          (issuetype-collection (jirafa-jirafalib-project-issuetypes-collection project-id)))
+      (clrhash jirafa-cache-project-assignee-collection)
+      (puthash project-id issuetype-collection jirafa-cache-issuetype-collection)
+      )))
+
+(defun jirafa-cache-project-assignee-collection-load ()
+  (dolist (project jirafa-cache-project-collection)
+    (let* ((project-id (cdr project))
+           (assignee-collection (jirafa-jirafalib-assignee-collection project-id)))
+      (clrhash jirafa-cache-project-assignee-collection)
+      (puthash project-id assignee-collection jirafa-cache-project-assignee-collection)
+      )))
 
 (provide 'jirafa)
 
