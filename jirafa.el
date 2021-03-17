@@ -6,6 +6,7 @@
 (defvar-local jirafa-cache-project-collection nil)
 (defvar-local jirafa-cache-project-assignee-collection (make-hash-table))
 (defvar-local jirafa-cache-issuetype-collection (make-hash-table))
+(defvar jirafa-jira-id-insert-format "jira: %s")
 
 
 (defun jirafa-refresh-cache ()
@@ -24,6 +25,7 @@
          (title (format jirafa-entry-format issue-id summary)))
       (org-insert-todo-heading-respect-content)
       (insert title)
+      (org-entry-put nil "JIRAFA-JIRA-ID" issue-id)
   ))
 
 (defun jirafa-insert-new-issue--at-point ()
@@ -49,6 +51,13 @@
       (org-entry-put nil "JIRAFA-JIRA-ID" id)
       (org-entry-put nil "JIRAFA-JIRA-KEY" key))
     ))
+
+(defun jirafa-jira-id-insert-from-current-clock--bottom ()
+  "Insert jira id from org with current clock active"
+  (interactive)
+  (goto-char (point-max))
+  (insert
+   (format jirafa-jira-id-insert-format (jirafa-jira-from-current-clock))))
 
 
 (defun jirafa-jirafalib-project-issuetypes-collection (id-or-key)
@@ -113,6 +122,19 @@
       (clrhash jirafa-cache-project-assignee-collection)
       (puthash project-id assignee-collection jirafa-cache-project-assignee-collection)
       )))
+
+
+(defun jirafa-jira-from-current-clock ()
+  "Get jira id from current clock"
+  (with-current-buffer (org-clock-is-active)
+    (save-excursion
+      (save-restriction
+        (org-back-to-heading t)
+        (let* ((element (cadr (org-element-at-point)))
+               (jira-id (org-entry-get nil "JIRAFA-JIRA-ID" t)))
+          jira-id
+          )))))
+
 
 (provide 'jirafa)
 
