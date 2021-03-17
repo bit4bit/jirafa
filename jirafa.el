@@ -7,7 +7,7 @@
 (defvar-local jirafa-cache-project-assignee-collection (make-hash-table))
 (defvar-local jirafa-cache-issuetype-collection (make-hash-table))
 (defvar jirafa-jira-id-insert-format "jira: %s")
-
+(defvar jirafa-jira-id-insert-bottom-callback 'jirafa-jira-id-insert-bottom-end-buffer)
 
 (defun jirafa-refresh-cache ()
   "Refresh cache."
@@ -56,9 +56,14 @@
   "Insert jira id from org with current clock active"
   (interactive)
   (goto-char (point-max))
-  (insert
-   (format jirafa-jira-id-insert-format (jirafa-jira-from-current-clock))))
+  (let ((text
+         (format jirafa-jira-id-insert-format (jirafa-jira-from-current-clock))))
+    (apply jirafa-jira-id-insert-bottom-callback (list text))))
 
+(defun jirafa-jira-id-insert-bottom-end-buffer (text)
+  "insert to end of buffer"
+  (goto-char (point-max))
+  (insert text))
 
 (defun jirafa-jirafalib-project-issuetypes-collection (id-or-key)
   (let* ((project (jirafalib-project-detail--get-by-id-or-key id-or-key))
@@ -137,4 +142,3 @@
 
 
 (provide 'jirafa)
-
