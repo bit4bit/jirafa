@@ -28,6 +28,14 @@
       (org-entry-put nil "JIRAFA-JIRA-ID" issue-id)
   ))
 
+(defun jirafa-open-url--at-point ()
+  "open browser for current jira issue"
+  (interactive)
+  (let ((issue (org-entry-get nil "JIRAFA-JIRA-ID")))
+    (if issue
+        (browse-url (jirafalib-issue--url issue))
+      (message "not found JIRA-ID"))))
+
 (defun jirafa-insert-new-issue--at-point ()
   "Insert a new issue."
   (interactive)

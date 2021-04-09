@@ -115,6 +115,9 @@
   (cdr (assoc field (assoc 'fields issue))))
 
 
+(defun jirafalib-issue--url (issue)
+  "issue url"
+  (concat "https://" jirafalib-host "/browse/" issue))
 
        
 (provide 'jirafalib)
