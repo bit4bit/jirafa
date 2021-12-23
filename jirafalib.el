@@ -74,6 +74,7 @@
          (url-request-data body)
          (url-request-extra-headers
           (list '("Content-Type" . "application/json")
+                '("Accept-Charset" . "utf-8")
                 (cons "Authorization" (concat "Basic" " "
                                               (apply 'jirafalib-credentials-to-basic-auth-string
                                                      (jirafalib-get-credentials)))))))
@@ -81,8 +82,9 @@
         (url-retrieve-synchronously (concat "https://" jirafalib-host endpoint))
       (goto-char (point-min))
       (search-forward-regexp "\n\n")
-      (buffer-substring (point) (point-max))
-     ))
+      (let ((text (buffer-substring (point) (point-max))))
+        (decode-coding-string text 'utf-8))
+      ))
   )
 
 (defun http--GET (endpoint)
@@ -90,6 +92,7 @@
   (let* ((url-request-method "GET")
          (url-request-extra-headers
           (list '("Content-Type" . "application/json")
+                '("Accept-Charset" . "utf-8")
                 (cons "Authorization" (concat "Basic" " "
                                               (apply 'jirafalib-credentials-to-basic-auth-string
                                                      (jirafalib-get-credentials)))))))
@@ -97,7 +100,8 @@
         (url-retrieve-synchronously (concat "https://" jirafalib-host endpoint))
       (goto-char (point-min))
       (search-forward-regexp "\n\n")
-      (buffer-substring (point) (point-max))
+      (let ((text (buffer-substring (point) (point-max))))
+        (decode-coding-string text 'utf-8))
      ))
   )
 
