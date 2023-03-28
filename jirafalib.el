@@ -82,9 +82,8 @@
         (url-retrieve-synchronously (concat "https://" jirafalib-host endpoint))
       (goto-char (point-min))
       (search-forward-regexp "\n\n")
-      (let ((text (buffer-substring (point) (point-max))))
-        (decode-coding-string text 'utf-8))
-      ))
+      (buffer-substring (point) (point-max))
+     ))
   )
 
 (defun http--GET (endpoint)

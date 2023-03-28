@@ -28,6 +28,11 @@
       (org-entry-put nil "JIRAFA-JIRA-ID" issue-id)
   ))
 
+(defun jirafa-open-issue (issue-id)
+  "open browser for issue"
+  (interactive "sJIRA ISSUE: ")
+  (browse-url (jirafalib-issue--url issue-id)))
+
 (defun jirafa-open-url--at-point ()
   "open browser for current jira issue"
   (interactive)
