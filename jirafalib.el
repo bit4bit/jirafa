@@ -12,7 +12,7 @@
 (defun jirafalib-credentials-to-basic-auth-string (user pass)
   "build authorization basic"
   (let ((text (concat user ":" pass)))
-    (base64-encode-string text)))
+    (base64-encode-string text t)))
 
 
 (defun jirafalib-issue--insert (project-id issuetype-id assignee summary description)
